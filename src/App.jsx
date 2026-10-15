@@ -75,16 +75,26 @@ export default function App() {
     return 1; // Default fallback
   });
 
+  const [customerName, setCustomerName] = useState(() => {
+    try {
+      return (typeof window !== 'undefined' ? localStorage.getItem('biteiq_customer_name') : '') || '';
+    } catch {
+      return '';
+    }
+  });
+
   // If user entered WITHOUT an explicit ?table= query parameter, prompt them to select their table!
   const [isTableSelectModalOpen, setIsTableSelectModalOpen] = useState(() => {
     return initialUrlTable === null;
   });
 
-  const handleSelectTable = (selectedNum) => {
+  const handleConfirmTableAndName = (selectedNum, name) => {
     setTableNumber(selectedNum);
+    setCustomerName(name);
     setIsTableSelectModalOpen(false);
     try {
       localStorage.setItem('biteiq_current_table', String(selectedNum));
+      localStorage.setItem('biteiq_customer_name', String(name));
       const url = new URL(window.location.href);
       url.searchParams.set('table', String(selectedNum));
       window.history.replaceState({}, '', url.toString());
@@ -513,6 +523,7 @@ export default function App() {
     const newRequest = {
       requestId: Math.floor(1000 + Math.random() * 9000),
       tableNumber,
+      customerName: customerName || (typeof window !== 'undefined' ? localStorage.getItem('biteiq_customer_name') : '') || 'সম্মানিত অতিথি',
       items: [...cartItems],
       total,
       totalPrepTime,
@@ -1142,13 +1153,14 @@ const consolidateTableBills = (orders = []) => {
         }}
       />
 
-      {/* Direct Link Visitor Table Selector Modal (যদি কাস্টমার সরাসরি লিঙ্কে বা সার্চ করে ঢোকে) */}
+      {/* Direct Link Visitor Table & Name Onboarding Modal */}
       <TableSelectModal
         isOpen={isTableSelectModalOpen}
         onClose={() => setIsTableSelectModalOpen(false)}
         tablesList={tablesList}
-        currentTable={tableNumber}
-        onSelectTable={handleSelectTable}
+        initialTable={initialUrlTable}
+        initialName={customerName}
+        onConfirmSelection={handleConfirmTableAndName}
         onOpenStaffLogin={() => {
           setIsTableSelectModalOpen(false);
           setIsStaffLoginOpen(true);

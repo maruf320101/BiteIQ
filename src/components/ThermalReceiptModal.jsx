@@ -42,6 +42,7 @@ export default function ThermalReceiptModal({
   const servedTime = order.servedAtTime || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const isPaid = order.paymentStatus === 'paid';
   const payMethod = order.paymentMethod || 'cash';
+  const customerName = order.customerName || (typeof window !== 'undefined' ? localStorage.getItem('biteiq_customer_name') : '') || '';
 
   // Step state: 'receipt' | 'payment'
   // When opened, if already paid or manager view -> always 'receipt'
@@ -214,6 +215,12 @@ export default function ThermalReceiptModal({
                     <span>Table: <strong className="text-slate-900">Table {tableNum}</strong></span>
                     <span>Inv: <strong className="text-slate-900">{invoiceNum}</strong></span>
                   </div>
+                  {customerName && (
+                    <div className="flex justify-between items-center text-[11px] text-slate-600 border-t border-dotted border-slate-200 pt-1 mt-0.5">
+                      <span>Guest / কাস্টমার:</span>
+                      <strong className="text-slate-950 font-bold font-sans">{customerName}</strong>
+                    </div>
+                  )}
                 </div>
 
                 {/* Dashed line */}

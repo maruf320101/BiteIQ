@@ -15,6 +15,7 @@ import {
   Tag,
   CheckCircle2,
   Megaphone,
+  Table as TableIcon,
   X
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
@@ -30,30 +31,69 @@ import TableServiceModal from './components/TableServiceModal';
 import ThermalReceiptModal from './components/ThermalReceiptModal';
 import CustomerReviewModal from './components/CustomerReviewModal';
 import StaffLoginModal from './components/StaffLoginModal';
+import TableSelectModal from './components/TableSelectModal';
 import AdminDashboardView from './components/AdminDashboardView';
 import ManagerDashboardView from './components/ManagerDashboardView';
 
 export default function App() {
-  const [tableNumber, setTableNumber] = useState(() => {
+  // Check if visitor entered with an explicit table in URL (e.g. from QR code scan ?table=X)
+  const initialUrlTable = (() => {
     try {
       const params = new URLSearchParams(window.location.search);
       const tbl = params.get('table');
       if (tbl && !isNaN(tbl)) {
         const parsed = parseInt(tbl, 10);
-        if (parsed >= 1 && parsed <= 99) {
-          return parsed;
-        }
-      }
-      const saved = localStorage.getItem('biteiq_current_table');
-      if (saved && !isNaN(saved)) {
-        return parseInt(saved, 10);
+        if (parsed >= 1 && parsed <= 99) return parsed;
       }
     } catch (e) {}
-    return 1; // Default to Table 1 if not specified
+    return null;
+  })();
+
+  // Dynamic tables list (default 1 to 5, or stored in localStorage)
+  const [tablesList, setTablesList] = useState(() => {
+    try {
+      const saved = localStorage.getItem('biteiq_tables_list');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map(Number).sort((a, b) => a - b);
+        }
+      }
+    } catch {}
+    return [1, 2, 3, 4, 5];
   });
 
-  // Synchronize tableNumber with URL query param and localStorage
+  const [tableNumber, setTableNumber] = useState(() => {
+    if (initialUrlTable !== null) return initialUrlTable;
+    try {
+      const saved = localStorage.getItem('biteiq_current_table');
+      if (saved && !isNaN(saved)) {
+        const parsed = parseInt(saved, 10);
+        if (parsed >= 1 && parsed <= 99) return parsed;
+      }
+    } catch (e) {}
+    return 1; // Default fallback
+  });
+
+  // If user entered WITHOUT an explicit ?table= query parameter, prompt them to select their table!
+  const [isTableSelectModalOpen, setIsTableSelectModalOpen] = useState(() => {
+    return initialUrlTable === null;
+  });
+
+  const handleSelectTable = (selectedNum) => {
+    setTableNumber(selectedNum);
+    setIsTableSelectModalOpen(false);
+    try {
+      localStorage.setItem('biteiq_current_table', String(selectedNum));
+      const url = new URL(window.location.href);
+      url.searchParams.set('table', String(selectedNum));
+      window.history.replaceState({}, '', url.toString());
+    } catch (e) {}
+  };
+
+  // Synchronize tableNumber with URL query param and localStorage once table is chosen / present
   useEffect(() => {
+    if (isTableSelectModalOpen && initialUrlTable === null) return;
     try {
       localStorage.setItem('biteiq_current_table', String(tableNumber));
       const url = new URL(window.location.href);
@@ -62,7 +102,7 @@ export default function App() {
         window.history.replaceState({}, '', url.toString());
       }
     } catch (e) {}
-  }, [tableNumber]);
+  }, [tableNumber, isTableSelectModalOpen, initialUrlTable]);
 
   // Listen for browser navigation / URL change
   useEffect(() => {
@@ -787,6 +827,16 @@ const consolidateTableBills = (orders = []) => {
 
           {/* Action Buttons for Customers */}
           <div className="flex items-center gap-2 sm:gap-3">
+            {/* Table Selector Pill in Navbar */}
+            <button
+              onClick={() => setIsTableSelectModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-800 border border-orange-200 font-extrabold text-xs transition-all cursor-pointer active:scale-95 shadow-2xs"
+              title="টেবিল নম্বর পরিবর্তন করতে ক্লিক করুন"
+            >
+              <TableIcon className="w-3.5 h-3.5 text-orange-600" />
+              <span>Table {tableNumber}</span>
+              <span className="text-[10px] text-orange-600 font-bold hidden sm:inline">(পরিবর্তন 🔄)</span>
+            </button>
             {/* Table Assistance & Call Waiter Button in Navbar with Unread Badge */}
             <button
               onClick={() => {
@@ -948,6 +998,7 @@ const consolidateTableBills = (orders = []) => {
         <HeroAndReviews
           tableNumber={tableNumber}
           onOpenAI={() => setIsAiOpen(true)}
+          onOpenTableSelect={() => setIsTableSelectModalOpen(true)}
           currentRequest={currentRequest}
           currentLiveOrder={currentLiveOrder}
           remainingSeconds={getOrderRemainingSeconds(currentLiveOrder)}
@@ -1088,6 +1139,19 @@ const consolidateTableBills = (orders = []) => {
             coinsEarned: rev.coinsEarned
           };
           setCustomerReviews((prev) => [newReviewEntry, ...prev]);
+        }}
+      />
+
+      {/* Direct Link Visitor Table Selector Modal (যদি কাস্টমার সরাসরি লিঙ্কে বা সার্চ করে ঢোকে) */}
+      <TableSelectModal
+        isOpen={isTableSelectModalOpen}
+        onClose={() => setIsTableSelectModalOpen(false)}
+        tablesList={tablesList}
+        currentTable={tableNumber}
+        onSelectTable={handleSelectTable}
+        onOpenStaffLogin={() => {
+          setIsTableSelectModalOpen(false);
+          setIsStaffLoginOpen(true);
         }}
       />
 

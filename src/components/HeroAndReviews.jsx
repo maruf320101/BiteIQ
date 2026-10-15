@@ -5,6 +5,7 @@ import { RESTAURANT_INFO, CUSTOMER_REVIEWS } from '../data/restaurantData';
 export default function HeroAndReviews({
   tableNumber,
   onOpenAI,
+  onOpenTableSelect,
   currentRequest,
   currentLiveOrder,
   remainingSeconds,
@@ -40,11 +41,19 @@ export default function HeroAndReviews({
 
           {/* Action Area */}
           <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
-            {/* Seated Table Badge */}
-            <div className="px-6 py-3.5 rounded-2xl bg-orange-500 text-white font-extrabold text-base flex items-center gap-2.5 shadow-lg shadow-orange-500/25">
+            {/* Seated Table Badge with Change Table option */}
+            <button
+              type="button"
+              onClick={onOpenTableSelect}
+              className="px-6 py-3.5 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-extrabold text-base flex items-center gap-2.5 shadow-lg shadow-orange-500/25 transition-all hover:scale-102 active:scale-95 cursor-pointer group"
+              title="টেবিল নম্বর পরিবর্তন করতে ক্লিক করুন"
+            >
               <span className="w-3 h-3 rounded-full bg-emerald-300 animate-ping" />
               <span>আপনি বর্তমানে বসে আছেন Table {tableNumber}-এ</span>
-            </div>
+              <span className="text-[11px] bg-black/25 px-2 py-0.5 rounded-md font-bold text-amber-200 group-hover:bg-black/35 transition-colors">
+                পরিবর্তন 🔄
+              </span>
+            </button>
 
             {/* AI Mood Advisor Button */}
             <button

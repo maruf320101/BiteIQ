@@ -12,8 +12,9 @@ export default function HeroAndReviews({
   onOpenKitchenStatus,
   featuredReviews = []
 }) {
-  const m = Math.floor(remainingSeconds / 60);
-  const s = remainingSeconds % 60;
+  const safeSeconds = typeof remainingSeconds === 'number' && !isNaN(remainingSeconds) ? remainingSeconds : 0;
+  const m = Math.floor(safeSeconds / 60);
+  const s = safeSeconds % 60;
   const formattedCountdown = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 
   const reviewsToDisplay = featuredReviews && featuredReviews.length > 0 

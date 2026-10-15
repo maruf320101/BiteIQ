@@ -21,16 +21,22 @@ export default function TableSelectModal({
 }) {
   if (!isOpen) return null;
 
+  const safeTables = Array.isArray(tablesList) && tablesList.length > 0 ? tablesList : [1, 2, 3, 4, 5];
+
   const handleChoose = (tblNum) => {
     try {
-      confetti({
-        particleCount: 50,
-        spread: 60,
-        origin: { y: 0.7 }
-      });
+      if (typeof window !== 'undefined' && typeof confetti === 'function') {
+        confetti({
+          particleCount: 50,
+          spread: 60,
+          origin: { y: 0.7 }
+        });
+      }
     } catch {}
 
-    onSelectTable(tblNum);
+    if (onSelectTable) {
+      onSelectTable(tblNum);
+    }
   };
 
   return (
@@ -63,11 +69,11 @@ export default function TableSelectModal({
         <div className="p-5 sm:p-6 space-y-4 bg-slate-50/70">
           <div className="flex items-center justify-between text-xs font-bold text-slate-500 px-1">
             <span>উপলব্ধ ডাইনিং টেবিলসমূহ:</span>
-            <span>মোট {tablesList.length}টি টেবিল</span>
+            <span>মোট {safeTables.length}টি টেবিল</span>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {tablesList.map((tbl) => {
+            {safeTables.map((tbl) => {
               const isSelected = currentTable === tbl;
               const formattedNum = tbl < 10 ? `0${tbl}` : tbl;
 
